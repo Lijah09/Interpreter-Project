@@ -2,9 +2,10 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
+/** Main program: runs the stages in order  read -> NOSPACES -> lex -> RES_SYM -> parse -> check -> run. */
 public class HLInt {
     public static void main(String[] args) throws IOException {
-        // 1. Get the file name: argument first, prompt as fallback
+        // 1. Get the file name: command-line argument first, prompt as fallback
         String file;
         if (args.length > 0) {
             file = args[0];
@@ -24,9 +25,10 @@ public class HLInt {
         // 2. NOSPACES.TXT (from the original text)
         Files.writeString(Path.of("NOSPACES.TXT"), src.replaceAll("\\s", ""));
 
-        // 3. Lex, then write RES_SYM.TXT (even if lexing failed partway)
+        // 3. Lexer, then RES_SYM.TXT (written even if lexing failed partway)
         Lexer lexer = new Lexer(src);
         List<Token> tokens = null;
+        List<Parser.Statement> program = null;
         HLError error = null;
         try {
             tokens = lexer.tokenize();
@@ -35,13 +37,28 @@ public class HLInt {
         }
         Files.write(Path.of("RES_SYM.TXT"), lexer.resSym);
 
-        // 4. Report (parser and executor get added here later)
+        // 4. Parser (syntax), then Checker (meaning). Both finish before anything runs.
+        if (error == null) {
+            try {
+                program = new Parser(tokens).parse();
+                new Checker().check(program);
+            } catch (HLError e) {
+                error = e;
+            }
+        }
+
+        // 5. Report
         if (error != null) {
             System.out.println("ERROR");
             System.err.println(error.getMessage());   // debug detail, not part of the spec
             return;
         }
+        System.out.println("NO ERROR(S) FOUND");
 
-        for (Token t : tokens) System.out.println(t);   // TEMPORARY: remove once the parser exists
+        // 6. Execute
+        /**
+         * remove comment when Interpreter is done
+         * new Interpreter().run(program);
+         */
     }
 }

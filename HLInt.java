@@ -56,9 +56,11 @@ public class HLInt {
         System.out.println("NO ERROR(S) FOUND");
 
         // 6. Execute
-        /**
-         * remove comment when Interpreter is done
-         * new Interpreter().run(program);
-         */
+        try {
+            new Interpreter().run(program);
+        } catch (HLError e) {
+            System.out.println("ERROR");
+            System.err.println(e.getMessage());
+        }
     }
 }
